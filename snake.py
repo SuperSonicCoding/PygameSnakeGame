@@ -87,8 +87,33 @@ upKey = False
 rightKey = False
 leftKey = False
 
+# Makes the end screen
+#   title - text at top of end screen
+#   question - yes or no question to be asked at end screen related to trying again (ex: "Try Again?")
+def endScreenMaker(title, question):
+    end = Rect(0, 0, size[0] / 2, size[1] / 4)
+    end.center = (size[0] / 2, size[1] / 2)
+    draw.rect(screen, white, end)
+    endText = fontObj.render(title, False, black)
+    finalScore = fontObj.render(f"Score: {score}", False, black)
+    questionStatement = fontObj.render(question, False, black)
+    yes = fontObj.render("Yes", False, black)
+    no = fontObj.render("No", False, black)
+    screen.blit(endText, textToRect(endText, end.center, end.top))
+    screen.blit(finalScore, textToRect(finalScore, end.center, end.top + diff))
+    screen.blit(questionStatement, textToRect(questionStatement, end.center, end.top + diff * 2))
+    yesRect = textToRect(endText, end.center, end.top + diff * 3, end.left + diff)
+    screen.blit(yes, yesRect)
+    noRect = textToRect(endText, end.center, end.top + diff * 3, end.left + diff * 6)
+    screen.blit(no, noRect)
+    return yesRect, noRect
+
 # Method for turning text to a Rectangle
 #   This method was created to make placing text on screen easier by having the option of editing the center position.
+#   text - text to be converted to a rectangle
+#   center - coordinates for center of new rectangle
+#   top - coordinates for top of new rectangle
+#   left - coordinates for left of new rectangle
 def textToRect(text, center, top, left=-1):
     rect = text.get_rect()
     rect.center = center
@@ -96,6 +121,19 @@ def textToRect(text, center, top, left=-1):
     if left != -1:
         rect.left = left
     return rect
+
+# Restarts the game
+def restart():
+    # This line must be here to show that we want to edit the global variables. If not here, it will assume I am making new local variables.
+    global lose, snakeSpawn, appleSpawn, direction, queued_direction, score, tailLength, positions
+    lose = False
+    snakeSpawn = False
+    appleSpawn = False
+    direction = [0, 0]
+    queued_direction = direction.copy()
+    score = 0
+    tailLength = INITIAL_TAIL_LENGTH
+    positions = []
 
 # Game will run till the user quits
 while True:
@@ -203,40 +241,11 @@ while True:
 
     if lose:
         # Makes the losing screen
-        lost = Rect(0, 0, size[0] / 2, size[1] / 4)
-        lost.center = (size[0] / 2, size[1] / 2)
-        draw.rect(screen, white, lost)
-        lostText = fontObj.render("You Lose!", False, black)
-        finalScore = fontObj.render(f"Score: {score}", False, black)
-        tryAgain = fontObj.render("Try again?", False, black)
-        yes = fontObj.render("Yes", False, black)
-        no = fontObj.render("No", False, black)
-        screen.blit(lostText, textToRect(lostText, lost.center, lost.top))
-        screen.blit(finalScore, textToRect(finalScore, lost.center, lost.top + diff))
-        screen.blit(tryAgain, textToRect(tryAgain, lost.center, lost.top + diff * 2))
-        yesRect = textToRect(lostText, lost.center, lost.top + diff * 3, lost.left + diff)
-        screen.blit(yes, yesRect)
-        noRect = textToRect(lostText, lost.center, lost.top + diff * 3, lost.left + diff * 6)
-        screen.blit(no, noRect)
+        yesOrNo = endScreenMaker("You Lose!", "Try again?")
     
     # Handles unexpected win
     if tailLength == interval * interval - 1:
-        # Creates winning screen
-        win = Rect(0, 0, size[0] / 2, size[1] / 4)
-        win.center = (size[0] / 2, size[1] / 2)
-        draw.rect(screen, white, win)
-        winText = fontObj.render("You Win!", False, black)
-        finalScore = fontObj.render(f"Score: {score}", False, black)
-        playAgain = fontObj.render("Play again?", False, black)
-        yes = fontObj.render("Yes", False, black)
-        no = fontObj.render("No", False, black)
-        screen.blit(winText, textToRect(winText, win.center, win.top))
-        screen.blit(finalScore, textToRect(finalScore, win.center, win.top + diff))
-        screen.blit(tryAgain, textToRect(tryAgain, win.center, win.top + diff * 2))
-        yesRect = textToRect(winText, win.center, win.top + diff * 3, win.left + diff)
-        screen.blit(yes, yesRect)
-        noRect = textToRect(winText, win.center, win.top + diff * 3, win.left + diff * 6)
-        screen.blit(no, noRect)
+        yesOrNo = endScreenMaker("You Win!", "Play again?")
 
     # Shows changes.
     pygame.display.flip()
@@ -253,17 +262,10 @@ while True:
             # Get position of mouse at time of left click.
             pos = pygame.mouse.get_pos()
             # If hovering over 'Yes', restart the game.
-            if yesRect.collidepoint(pos):
-                lose = False
-                snakeSpawn = False
-                appleSpawn = False
-                direction = [0, 0]
-                queued_direction = direction.copy()
-                score = 0
-                tailLength = INITIAL_TAIL_LENGTH
-                positions = []
+            if yesOrNo[0].collidepoint(pos):
+                restart()
             # If hovering over 'No', stop the game.
-            if noRect.collidepoint(pos):
+            if yesOrNo[1].collidepoint(pos):
                 sys.exit()
     
     # Handles the winning screen after it is made.
@@ -274,22 +276,14 @@ while True:
         mouse = pygame.mouse.get_pressed()
         if mouse[0]:
             pos = pygame.mouse.get_pos()
-            if yesRect.collidepoint(pos):
-                lose = False
-                snakeSpawn = False
-                appleSpawn = False
-                direction = [0, 0]
-                queued_direction = direction.copy()
-                score = 0
-                tailLength = INITIAL_TAIL_LENGTH
-                positions = []
-            if noRect.collidepoint(pos):
+            if yesOrNo[0].collidepoint(pos):
+                restart()
+            if yesOrNo[1].collidepoint(pos):
                 sys.exit()
 
 
 
     
 # Goals:
-#   Make function for creating the win/lose screen
 #   Make other python files for current things (such as grid and snake body) and import them.
 
